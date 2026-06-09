@@ -1,0 +1,44 @@
+{
+  "name": "certificates-library",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.mjs",
+  "type": "module",
+  "types": "./index.d.mts",
+  "author": {
+    "name": "Jonathan Perry for Sequence Media Limited",
+    "email": "sequencemedia@sequencemedia.net",
+    "url": "https://sequencemedia.net"
+  },
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sequencemedialimited/certificates-library.git"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "npm run lint -- --fix",
+    "prepare": "husky",
+    "start": "cross-env NODE_ENV=production node app.mjs"
+  },
+  "dependencies": {
+    "cross-env": "^10.1.0",
+    "yargs-parser": "^22.0.0"
+  },
+  "devDependencies": {
+    "@sequencemedia/eslint-config-standard": "^0.2.107",
+    "@sequencemedia/eslint-config-typescript": "^0.1.182",
+    "@types/node": "^25.6.2",
+    "@types/yargs-parser": "^21.0.3",
+    "eslint": "9.38.0",
+    "globals": "^17.6.0",
+    "husky": "^9.1.7"
+  },
+  "imports": {
+    "#certificates-library": "./src/index.mjs",
+    "#certificates-library/*": "./src/*.mjs",
+    "#certificates-library/utils": "./src/utils/index.mjs",
+    "#certificates-library/utils/*": "./src/utils/*.mjs",
+    "#types": "./types/index.d.mts"
+  }
+}
