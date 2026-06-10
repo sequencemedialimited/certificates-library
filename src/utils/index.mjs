@@ -21,7 +21,7 @@ import {
 } from 'node:fs/promises'
 
 import {
-  STAT,
+  STATS,
   LIMIT
 } from './defaults.mjs'
 
@@ -79,10 +79,10 @@ export function getLimit (limit = null) {
 /**
  *  @param {string[]} array
  *  @param {number} limit
- */
+ *//*
 export function * getBatch (array, limit = LIMIT) {
   for (let i = 0; i < array.length; i += limit) yield array.slice(i, i + limit)
-}
+} */
 
 /**
  *  @param {Map<string, Stats>} statsMap
@@ -98,8 +98,8 @@ export function getFilePathSort (statsMap = new Map()) {
     const o = basename(omega)
 
     if (a === o) {
-      const { birthtimeMs: a } = statsMap.get(alpha) ?? STAT
-      const { birthtimeMs: o } = statsMap.get(omega) ?? STAT
+      const { birthtimeMs: a } = statsMap.get(alpha) ?? STATS
+      const { birthtimeMs: o } = statsMap.get(omega) ?? STATS
 
       // Numerical
       return a - o
@@ -119,27 +119,27 @@ export const getFindFileNameMatch = (alpha) => (omega) => basename(alpha) === ba
 /**
  *  @param {string[]} array
  *  @returns {(alpha: string, i: number) => boolean}
- */
-export const getFilterToIncludeFileNameDuplicatesFrom = (array) => (alpha, i) => i !== array.findIndex(getFindFileNameMatch(alpha))
+ *//*
+export const getFilterToIncludeFileNameDuplicatesFrom = (array) => (alpha, i) => i !== array.findIndex(getFindFileNameMatch(alpha)) */
 
 /**
  *  @param {string[]} array
  *  @returns {(alpha: string, i: number) => boolean}
- */
-export const getFilterToExcludeFileNameDuplicatesFrom = (array) => (alpha, i) => i === array.findIndex(getFindFileNameMatch(alpha))
+ *//*
+export const getFilterToExcludeFileNameDuplicatesFrom = (array) => (alpha, i) => i === array.findIndex(getFindFileNameMatch(alpha)) */
 
 /**
  *  @param {string[]} array
  *  @returns {boolean}
- */
-export const hasFileNameDuplicatesIn = (array) => ((new Set(array.map((value) => basename(value)))).size !== array.length)
+ *//*
+export const hasFileNameDuplicatesIn = (array) => ((new Set(array.map((value) => basename(value)))).size !== array.length) */
 
 /**
  *  @param {string} fileName
  *  @param {[string[]]} array
  *  @returns {boolean}
- */
-export const hasFileNameDuplicateIn = (fileName, array) => array.some((array) => array.some(getFindFileNameMatch(fileName)))
+ *//*
+export const hasFileNameDuplicateIn = (fileName, array) => array.some((array) => array.some(getFindFileNameMatch(fileName))) */
 
 /**
  *  @param {string} value
