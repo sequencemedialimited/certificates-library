@@ -30,7 +30,7 @@
     "@sequencemedia/eslint-config-typescript": "^0.1.182",
     "@types/node": "^25.9.2",
     "@types/yargs-parser": "^21.0.3",
-    "eslint": "9.38.0",
+    "eslint": "10.4.1",
     "globals": "^17.6.0",
     "husky": "^9.1.7"
   },
