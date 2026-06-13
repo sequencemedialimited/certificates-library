@@ -32,7 +32,7 @@ import {
  *    origin: string,
  *    limit: number,
  *    destination: string,
- *  }} options
+ *  }} params
  */
 export default async function library (topDir, {
   origin: ORIGIN,

@@ -19,10 +19,12 @@
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
     "prepare": "husky",
-    "start": "cross-env NODE_ENV=production node app.mjs"
+    "start": "cross-env NODE_ENV=production node library.mjs",
+    "start:validate": "cross-env NODE_ENV=production node validate.mjs"
   },
   "dependencies": {
     "cross-env": "^10.1.0",
+    "csv-writer": "^1.6.0",
     "yargs-parser": "^22.0.0"
   },
   "devDependencies": {
