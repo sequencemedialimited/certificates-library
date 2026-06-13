@@ -23,7 +23,7 @@ import {
   toJpgPath,
   getFileNameGroups,
   createDir,
-  lstatFile
+  accessFile
 } from './utils/index.mjs'
 
 /**
@@ -57,8 +57,8 @@ export default async function library (topDir, {
       const jpg = toJpgPath(toPsdPath(filePath))
 
       await Promise.all([
-        lstatFile(psd),
-        lstatFile(jpg)
+        accessFile(psd),
+        accessFile(jpg)
       ])
 
       fileStatsMap.set(filePath, await stat(filePath))

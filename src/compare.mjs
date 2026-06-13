@@ -1,27 +1,22 @@
 import {
+  basename,
   join
 } from 'node:path'
 
 import { createWriteStream } from 'node:fs'
 
 import {
+  readFile,
   glob,
   unlink
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
-import {
-  toPsdPath,
-  toJpgPath,
-  accessFile
-} from './utils/index.mjs'
-
 const HEADER = [
   { id: 'row', title: 'Row' },
-  { id: 'tif', title: 'TIF' },
-  { id: 'psd', title: 'PSD' },
-  { id: 'jpg', title: 'JPG' }
+  { id: 'original', title: 'Original' },
+  { id: 'duplicate', title: 'Duplicate' }
 ]
 
 /**
@@ -55,28 +50,28 @@ export default async function validate ({
 
   if (filePathsSet.size) {
     /**
-     *  @type {Map<string, Map<'psd' | 'jpg', string>>}
+     *  @type {Map<string, Set<string>>}
      */
-    const errorsMap = new Map()
+    const duplicatesMap = new Map()
 
-    for (const filePath of filePathsSet) {
-      const psd = toPsdPath(filePath)
-      const jpg = toJpgPath(toPsdPath(filePath))
+    const originals = Array.from(filePathsSet)
 
-      try {
-        await accessFile(psd)
-      } catch {
-        const errorMap = errorsMap.get(filePath) ?? new Map()
-        if (!errorsMap.has(filePath)) errorsMap.set(filePath, errorMap)
-        errorMap.set('psd', psd)
-      }
+    for (const originalPath of originals) {
+      const b = basename(originalPath)
+      const candidates = originals.filter((candidatePath) => originalPath !== candidatePath && b === basename(candidatePath))
 
-      try {
-        await accessFile(jpg)
-      } catch {
-        const errorMap = errorsMap.get(filePath) ?? new Map()
-        if (!errorsMap.has(filePath)) errorsMap.set(filePath, errorMap)
-        errorMap.set('jpg', jpg)
+      if (candidates.length) {
+        const ALPHA = await readFile(originalPath)
+
+        for (const candidatePath of candidates) {
+          const OMEGA = await readFile(candidatePath)
+
+          if (Buffer.compare(ALPHA, OMEGA) === 0) { // equal
+            const duplicates = duplicatesMap.get(originalPath) ?? new Set()
+            if (!duplicatesMap.has(originalPath)) duplicatesMap.set(originalPath, duplicates)
+            duplicates.add(candidatePath)
+          }
+        }
       }
     }
 
@@ -92,14 +87,15 @@ export default async function validate ({
       writeStream.write(csvStringifier.getHeaderString())
 
       let i = 0
-      for await (const [tif, errorMap] of errorsMap.entries()) {
+      for await (const [original, duplicates] of duplicatesMap.entries()) {
         await (new Promise((resolve) => {
-          writeStream.write(csvStringifier.stringifyRecords([{
-            row: ++i,
-            tif,
-            psd: errorMap.get('psd') ?? '',
-            jpg: errorMap.get('jpg') ?? ''
-          }]), resolve)
+          writeStream.write(csvStringifier.stringifyRecords(Array.from(duplicates).map((duplicate) => {
+            return {
+              row: ++i,
+              original,
+              duplicate
+            }
+          })), resolve)
         }))
       }
     } finally {

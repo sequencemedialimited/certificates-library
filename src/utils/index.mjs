@@ -13,10 +13,12 @@ import {
 } from 'node:path'
 
 import {
+  constants,
   glob,
   mkdtemp,
   mkdir,
   lstat,
+  access,
   rm
 } from 'node:fs/promises'
 
@@ -58,6 +60,17 @@ export async function createDir (d) {
 export async function lstatFile (f) {
   try {
     await lstat(f)
+  } catch {
+    throw new Error(`No file @ "${f}"`)
+  }
+}
+
+/**
+ *  @param {string} f
+ */
+export async function accessFile (f) {
+  try {
+    await access(f, constants.R_OK | constants.W_OK)
   } catch {
     throw new Error(`No file @ "${f}"`)
   }
