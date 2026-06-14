@@ -36,16 +36,16 @@ export function normalisePath (value) {
 }
 
 /**
- * @param {string} [tmpDir]
- * @returns {Promise<string>}
+ *  @param {string} [tmpDir]
+ *  @returns {Promise<string>}
  */
 export async function createWorkingDir (tmpDir = tmpdir()) {
   return await mkdtemp(join(tmpDir, 'certificates-library-'))
 }
 
 /**
- * @param {string} [tmpDir]
- * @returns {Promise<void>}
+ *  @param {string} [tmpDir]
+ *  @returns {Promise<void>}
  */
 export async function removeWorkingDir (tmpDir = tmpdir()) {
   for await (const workingDir of glob(join(tmpDir, 'certificates-library-*'))) await rm(workingDir, { recursive: true })
@@ -124,7 +124,7 @@ export function getFileNameSort (statsMap = new Map()) {
 }
 
 /**
- * @param {number} [limit]
+ *  @param {number} [limit]
  */
 export function getFileNameReduce (limit = LIMIT) {
   /**

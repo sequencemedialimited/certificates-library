@@ -25,7 +25,7 @@ const HEADER = [
  *    destination: string
  *  }} params
  */
-export default async function validate ({
+export default async function compare ({
   origin: ORIGIN,
   destination: DESTINATION
 }) {
@@ -51,16 +51,16 @@ export default async function validate ({
      */
     const duplicatesMap = new Map()
 
-    const originals = Array.from(filePathsSet)
+    const originalPaths = Array.from(filePathsSet)
 
-    for (const originalPath of originals) {
+    for (const originalPath of originalPaths) {
       const b = basename(originalPath)
-      const candidates = originals.filter((candidatePath) => originalPath !== candidatePath && b === basename(candidatePath))
+      const candidatePaths = originalPaths.filter((candidatePath) => originalPath !== candidatePath && b === basename(candidatePath))
 
-      if (candidates.length) {
+      if (candidatePaths.length) {
         const ALPHA = await readFile(originalPath)
 
-        for (const candidatePath of candidates) {
+        for (const candidatePath of candidatePaths) {
           const OMEGA = await readFile(candidatePath)
 
           if (Buffer.compare(ALPHA, OMEGA) === 0) { // equal
