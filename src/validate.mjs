@@ -39,10 +39,7 @@ export default async function validate ({
   } catch (e) {
     if (e instanceof Error) { // @ts-ignore
       const { code } = e
-      if (code !== 'ENOENT') {
-        const { message } = e
-        console.error(message)
-      }
+      if (code !== 'ENOENT') throw e
     }
   }
 
@@ -57,7 +54,7 @@ export default async function validate ({
     /**
      *  @type {Map<string, Map<'psd' | 'jpg', string>>}
      */
-    const errorsMap = new Map()
+    const exceptionsMap = new Map()
 
     for (const filePath of filePathsSet) {
       const psd = toPsdPath(filePath)
@@ -66,17 +63,17 @@ export default async function validate ({
       try {
         await accessFile(psd)
       } catch {
-        const errorMap = errorsMap.get(filePath) ?? new Map()
-        if (!errorsMap.has(filePath)) errorsMap.set(filePath, errorMap)
-        errorMap.set('psd', psd)
+        const exceptions = exceptionsMap.get(filePath) ?? new Map()
+        if (!exceptionsMap.has(filePath)) exceptionsMap.set(filePath, exceptions)
+        exceptions.set('psd', psd)
       }
 
       try {
         await accessFile(jpg)
       } catch {
-        const errorMap = errorsMap.get(filePath) ?? new Map()
-        if (!errorsMap.has(filePath)) errorsMap.set(filePath, errorMap)
-        errorMap.set('jpg', jpg)
+        const exceptions = exceptionsMap.get(filePath) ?? new Map()
+        if (!exceptionsMap.has(filePath)) exceptionsMap.set(filePath, exceptions)
+        exceptions.set('jpg', jpg)
       }
     }
 
@@ -92,13 +89,13 @@ export default async function validate ({
       writeStream.write(csvStringifier.getHeaderString())
 
       let i = 0
-      for await (const [tif, errorMap] of errorsMap.entries()) {
+      for await (const [tif, exceptions] of exceptionsMap.entries()) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords([{
             row: ++i,
             tif,
-            psd: errorMap.get('psd') ?? '',
-            jpg: errorMap.get('jpg') ?? ''
+            psd: exceptions.get('psd') ?? '',
+            jpg: exceptions.get('jpg') ?? ''
           }]), resolve)
         }))
       }

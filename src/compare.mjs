@@ -34,10 +34,7 @@ export default async function validate ({
   } catch (e) {
     if (e instanceof Error) { // @ts-ignore
       const { code } = e
-      if (code !== 'ENOENT') {
-        const { message } = e
-        console.error(message)
-      }
+      if (code !== 'ENOENT') throw e
     }
   }
 

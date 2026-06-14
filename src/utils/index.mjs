@@ -35,10 +35,18 @@ export function normalisePath (value) {
   return String(value ?? '').trim().replace(/^~/, homedir())
 }
 
+/**
+ * @param {string} [tmpDir]
+ * @returns {Promise<string>}
+ */
 export async function createWorkingDir (tmpDir = tmpdir()) {
   return await mkdtemp(join(tmpDir, 'certificates-library-'))
 }
 
+/**
+ * @param {string} [tmpDir]
+ * @returns {Promise<void>}
+ */
 export async function removeWorkingDir (tmpDir = tmpdir()) {
   for await (const workingDir of glob(join(tmpDir, 'certificates-library-*'))) await rm(workingDir, { recursive: true })
 }
@@ -90,23 +98,15 @@ export function getLimit (limit = null) {
 }
 
 /**
- *  @param {string[]} array
- *  @param {number} limit
- *//*
-export function * getBatch (array, limit = LIMIT) {
-  for (let i = 0; i < array.length; i += limit) yield array.slice(i, i + limit)
-} */
-
-/**
  *  @param {Map<string, Stats>} statsMap
  *  @return {(alpha: string, omega: string) => number}
  */
-export function getFilePathSort (statsMap = new Map()) {
+export function getFileNameSort (statsMap = new Map()) {
   /**
    *  @param {string} alpha
    *  @param {string} omega
    */
-  return function sort (alpha, omega) {
+  return function fileNameSort (alpha, omega) {
     const a = basename(alpha)
     const o = basename(omega)
 
@@ -124,69 +124,67 @@ export function getFilePathSort (statsMap = new Map()) {
 }
 
 /**
+ * @param {number} [limit]
+ */
+export function getFileNameReduce (limit = LIMIT) {
+  /**
+   *  @param {string[][]} groups
+   *  @param {string} filePath
+   */
+  return function fileNameReduce (
+    /**
+     *  @type {string[][]}
+     */
+    groups,
+    /**
+     *  @type {string}
+     */
+    filePath
+  ) {
+    const group = groups.find(getFindFileNameGroup(filePath, limit)) ?? []
+    if (!groups.includes(group)) groups.push(group)
+    group.push(filePath)
+    return groups
+  }
+}
+
+/**
  *  @param {string} alpha
  *  @returns {(omega: string) => boolean}
  */
-export const getFindFileNameMatch = (alpha) => (omega) => basename(alpha) === basename(omega)
+export function getFindFileNameMatch (alpha) {
+  const a = basename(alpha)
 
-/**
- *  @param {string[]} array
- *  @returns {(alpha: string, i: number) => boolean}
- *//*
-export const getFilterToIncludeFileNameDuplicatesFrom = (array) => (alpha, i) => i !== array.findIndex(getFindFileNameMatch(alpha)) */
+  return function findFileNameMatch (omega) {
+    const o = basename(omega)
 
-/**
- *  @param {string[]} array
- *  @returns {(alpha: string, i: number) => boolean}
- *//*
-export const getFilterToExcludeFileNameDuplicatesFrom = (array) => (alpha, i) => i === array.findIndex(getFindFileNameMatch(alpha)) */
-
-/**
- *  @param {string[]} array
- *  @returns {boolean}
- *//*
-export const hasFileNameDuplicatesIn = (array) => ((new Set(array.map((value) => basename(value)))).size !== array.length) */
+    return a === o
+  }
+}
 
 /**
  *  @param {string} fileName
- *  @param {[string[]]} array
- *  @returns {boolean}
- *//*
-export const hasFileNameDuplicateIn = (fileName, array) => array.some((array) => array.some(getFindFileNameMatch(fileName))) */
-
-/**
- *  @param {string} value
- *  @param {number} limit
+ *  @param {number} [limit]
  *  @returns {(array: string[]) => boolean}
  */
-export const getFindFileNameGroup = (value, limit = LIMIT) => (array) => array.length < limit && !array.some(getFindFileNameMatch(value))
+export function getFindFileNameGroup (fileName, limit = LIMIT) {
+  return function findFileNameGroup (group) {
+    return group.length < limit && !group.some(getFindFileNameMatch(fileName))
+  }
+}
 
 /**
- *  @param {Set<string>} pathsSet
- *  @param {Map<string, Stats>} statsMap
- *  @param {number} limit
+ *  @param {Set<string>} [pathsSet]
+ *  @param {Map<string, Stats>} [statsMap]
+ *  @param {number} [limit]
  *  @return {string[][]}
  */
-export function getFileNameGroups (pathsSet, statsMap, limit = LIMIT) {
+export function getFileNameGroups (pathsSet = new Set(), statsMap = new Map(), limit = LIMIT) {
   return (
     Array
       .from(pathsSet)
-      .sort(getFilePathSort(statsMap))
-      .reduce((
-        /**
-         *  @type {string[][]}
-         */
-        accumulator,
-        /**
-         *  @type {string}
-         */
-        filePath
-      ) => {
-        const fileNameGroup = accumulator.find(getFindFileNameGroup(filePath, limit)) ?? []
-        if (!accumulator.includes(fileNameGroup)) accumulator.push(fileNameGroup)
-        fileNameGroup.push(filePath)
-        return accumulator
-      }, [])
+      .sort(getFileNameSort(statsMap))
+      .reduce(getFileNameReduce(limit), [])
   )
 }
 
