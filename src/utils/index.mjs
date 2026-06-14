@@ -48,7 +48,7 @@ export async function removeWorkingDir (tmpDir = tmpdir()) {
  */
 export async function createDir (d) {
   try {
-    await mkdir(d)
+    await mkdir(d, { recursive: true })
   } catch {
     throw new Error(`Failed to create "${d}"`)
   }

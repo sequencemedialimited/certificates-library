@@ -6,7 +6,10 @@ import {
   join
 } from 'node:path'
 
-import { lstatSync } from 'node:fs'
+import {
+  constants,
+  accessSync
+} from 'node:fs'
 
 import {
   normalisePath
@@ -20,14 +23,14 @@ if (!configMap.has('from')) throw new Error('`from` is required')
 
 const ORIGIN = resolve(normalisePath(configMap.get('from')))
 try {
-  lstatSync(ORIGIN)
+  accessSync(ORIGIN, constants.R_OK | constants.W_OK)
 } catch {
   throw new Error(`No \`from\` @ "${ORIGIN}"`)
 }
 
 const to = resolve(normalisePath(configMap.get('to') || ORIGIN))
 try {
-  lstatSync(to)
+  accessSync(to, constants.R_OK | constants.W_OK)
 } catch {
   throw new Error(`No \`to\` @ "${to}"`)
 }
@@ -37,7 +40,10 @@ const DESTINATION = isDirectory ? join(to, 'validate.csv') : to
 
 console.log('🚀')
 export default (
-  validate({ origin: ORIGIN, destination: DESTINATION })
+  validate({
+    origin: ORIGIN,
+    destination: DESTINATION
+  })
     .then(() => {
       console.log('👍')
     })

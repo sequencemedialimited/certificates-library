@@ -20,8 +20,8 @@
     "lint:fix": "npm run lint -- --fix",
     "prepare": "husky",
     "start": "cross-env NODE_ENV=production node library.mjs",
-    "start:validate": "cross-env NODE_ENV=production node validate.mjs",
-    "start:compare": "cross-env NODE_ENV=production node compare.mjs"
+    "start:compare": "cross-env NODE_ENV=production node compare.mjs",
+    "start:validate": "cross-env NODE_ENV=production node validate.mjs"
   },
   "dependencies": {
     "cross-env": "^10.1.0",

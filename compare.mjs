@@ -6,7 +6,10 @@ import {
   join
 } from 'node:path'
 
-import { accessSync, constants } from 'node:fs'
+import {
+  constants,
+  accessSync
+} from 'node:fs'
 
 import {
   normalisePath
@@ -37,7 +40,10 @@ const DESTINATION = isDirectory ? join(to, 'compare.csv') : to
 
 console.log('🚀')
 export default (
-  compare({ origin: ORIGIN, destination: DESTINATION })
+  compare({
+    origin: ORIGIN,
+    destination: DESTINATION
+  })
     .then(() => {
       console.log('👍')
     })
