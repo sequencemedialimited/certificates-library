@@ -38,6 +38,8 @@ try {
 
 const LIMIT = getLimit(configMap.get('limit'))
 
+const WORKING_DIR = configMap.get('working-dir')
+
 /**
  *  @param {string} workingDir
  *  @returns {Promise<void>}
@@ -52,7 +54,7 @@ async function execute (workingDir) {
 
 console.log('🚀')
 export default (
-  createWorkingDir()
+  createWorkingDir(WORKING_DIR)
     .then(execute)
     .then(() => {
       console.log('👍')
@@ -60,5 +62,5 @@ export default (
     .catch(({ message }) => {
       console.error(`💥 ${message}`)
     })
-    .finally(removeWorkingDir)
+    .finally(() => removeWorkingDir(WORKING_DIR))
 )
