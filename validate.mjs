@@ -3,7 +3,8 @@
 import {
   resolve,
   parse,
-  join
+  join,
+  dirname
 } from 'node:path'
 
 import {
@@ -29,14 +30,13 @@ try {
 }
 
 const to = resolve(normalisePath(configMap.get('to') || ORIGIN))
+const isDirectory = !parse(to).ext
+const DESTINATION = isDirectory ? join(to, 'compare.csv') : to
 try {
-  accessSync(to, constants.R_OK | constants.W_OK)
+  accessSync(dirname(DESTINATION), constants.R_OK | constants.W_OK)
 } catch {
   throw new Error(`No \`to\` @ "${to}"`)
 }
-
-const isDirectory = !parse(to).ext
-const DESTINATION = isDirectory ? join(to, 'validate.csv') : to
 
 console.log('🚀')
 export default (
