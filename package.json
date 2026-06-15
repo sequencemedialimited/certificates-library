@@ -21,7 +21,8 @@
     "prepare": "husky || true",
     "start": "cross-env NODE_ENV=production node library.mjs",
     "start:compare": "cross-env NODE_ENV=production node compare.mjs",
-    "start:validate": "cross-env NODE_ENV=production node validate.mjs"
+    "start:validate": "cross-env NODE_ENV=production node validate.mjs",
+    "start:library": "cross-env NODE_ENV=production node library.mjs"
   },
   "dependencies": {
     "cross-env": "^10.1.0",
