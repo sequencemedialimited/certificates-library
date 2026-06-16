@@ -17,7 +17,7 @@ import {
   glob,
   mkdtemp,
   mkdir,
-  lstat,
+  stat,
   access,
   rm
 } from 'node:fs/promises'
@@ -65,9 +65,9 @@ export async function createDir (d) {
 /**
  *  @param {string} f
  */
-export async function lstatFile (f) {
+export async function statFile (f) {
   try {
-    await lstat(f)
+    await stat(f)
   } catch {
     throw new Error(`No file @ "${f}"`)
   }

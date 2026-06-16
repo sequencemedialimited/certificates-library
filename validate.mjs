@@ -3,13 +3,13 @@
 import {
   resolve,
   parse,
-  join,
-  dirname
+  join
 } from 'node:path'
 
 import {
   constants,
-  accessSync
+  accessSync,
+  statSync
 } from 'node:fs'
 
 import {
@@ -24,18 +24,38 @@ if (!configMap.has('from')) throw new Error('`from` is required')
 
 const ORIGIN = resolve(normalisePath(configMap.get('from')))
 try {
+  // ensure the path exists
+  const stats = statSync(ORIGIN)
+
+  // ensure the path is a directory
+  if (!stats.isDirectory()) throw new Error(`Invalid \`from\` @ "${ORIGIN}"`) // caught and rethrown
+
+  // ensure the path is read/writable
   accessSync(ORIGIN, constants.R_OK | constants.W_OK)
 } catch {
-  throw new Error(`No \`from\` @ "${ORIGIN}"`)
+  throw new Error(`Invalid \`from\` @ "${ORIGIN}"`)
 }
 
 const to = resolve(normalisePath(configMap.get('to') || ORIGIN))
-const isDirectory = !parse(to).ext
-const DESTINATION = isDirectory ? join(to, 'compare.csv') : to
+let DESTINATION
 try {
-  accessSync(dirname(DESTINATION), constants.R_OK | constants.W_OK)
+  // parse the path
+  const {
+    ext,
+    dir
+  } = parse(to)
+
+  if (ext) {
+    // it's a file
+    accessSync(dir, constants.R_OK | constants.W_OK)
+    DESTINATION = to
+  } else {
+    // it's a directory
+    accessSync(to, constants.R_OK | constants.W_OK)
+    DESTINATION = join(to, 'compare.csv')
+  }
 } catch {
-  throw new Error(`No \`to\` @ "${to}"`)
+  throw new Error(`Invalid \`to\` @ "${to}"`)
 }
 
 console.log('🚀')
