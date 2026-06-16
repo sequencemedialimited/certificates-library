@@ -14,7 +14,8 @@ import { createObjectCsvStringifier } from 'csv-writer'
 import {
   toPsdPath,
   toJpgPath,
-  accessFile
+  accessFile,
+  sortEntries
 } from './utils/index.mjs'
 
 const HEADER = [
@@ -89,7 +90,7 @@ export default async function validate ({
       writeStream.write(csvStringifier.getHeaderString())
 
       let i = 0
-      for await (const [tif, exceptions] of exceptionsMap.entries()) {
+      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(sortEntries)) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords([{
             row: ++i,

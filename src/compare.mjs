@@ -13,6 +13,8 @@ import {
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
+import { sortEntries } from './utils/index.mjs'
+
 const HEADER = [
   { id: 'row', title: 'Row' },
   { id: 'original', title: 'Original' },
@@ -84,7 +86,7 @@ export default async function compare ({
       writeStream.write(csvStringifier.getHeaderString())
 
       let i = 0
-      for await (const [original, duplicates] of duplicatesMap.entries()) {
+      for await (const [original, duplicates] of Array.from(duplicatesMap.entries()).sort(sortEntries)) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords(Array.from(duplicates).map((duplicate) => {
             return {

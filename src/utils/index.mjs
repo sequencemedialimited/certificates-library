@@ -28,6 +28,15 @@ import {
 } from './defaults.mjs'
 
 /**
+ * @param {[string, unknown]} alpha
+ * @param {[string, unknown]} omega
+ * @returns {number}
+ */
+export function sortEntries ([a], [o]) {
+  return a.localeCompare(o)
+}
+
+/**
  *  @param {unknown | null} value
  *  @returns {string}
  */
