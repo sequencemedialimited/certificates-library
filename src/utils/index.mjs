@@ -2,6 +2,8 @@
  *  @typedef {import('node:fs').Stats} Stats
  */
 
+import process from 'node:process'
+
 import {
   homedir,
   tmpdir
@@ -26,6 +28,20 @@ import {
   STATS,
   LIMIT
 } from './defaults.mjs'
+
+/**
+ * @param {unknown} v
+ */
+export async function writeLine (v) {
+  const s = String(v)
+  await (new Promise((resolve) => stdout.clearLine(0, () => resolve(v))))
+  await (new Promise((resolve) => stdout.cursorTo(0, () => resolve(v))))
+  await (new Promise((resolve) => stdout.write(s, () => resolve(v))))
+}
+
+const {
+  stdout
+} = process
 
 /**
  * @param {[string, unknown]} alpha

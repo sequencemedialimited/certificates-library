@@ -87,7 +87,9 @@ export default async function validate ({
     })
 
     try {
-      writeStream.write(csvStringifier.getHeaderString())
+      await (new Promise((resolve) => {
+        writeStream.write(csvStringifier.getHeaderString(), resolve)
+      }))
 
       let i = 0
       for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(sortEntries)) {
