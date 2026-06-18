@@ -13,3 +13,6 @@ node_modules
 
 # Hooks
 .husky/hooks
+
+# Working directory
+.working-dir
