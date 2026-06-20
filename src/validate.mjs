@@ -1,3 +1,7 @@
+/**
+ *  @typedef {import('node:fs').Stats} Stats
+ */
+
 import {
   join
 } from 'node:path'
@@ -6,6 +10,7 @@ import { createWriteStream } from 'node:fs'
 
 import {
   glob,
+  stat,
   unlink
 } from 'node:fs/promises'
 
@@ -15,7 +20,7 @@ import {
   toPsdPath,
   toJpgPath,
   accessFile,
-  sortEntries
+  getEntriesFileNameSort
 } from './utils/index.mjs'
 
 const HEADER = [
@@ -49,7 +54,16 @@ export default async function validate ({
    */
   const filePathsSet = new Set()
 
-  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) filePathsSet.add(filePath)
+  /**
+   *  @type {Map<string, Stats>}
+   */
+  const fileStatsMap = new Map()
+
+  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
+    filePathsSet.add(filePath)
+
+    fileStatsMap.set(filePath, await stat(filePath))
+  }
 
   if (filePathsSet.size) {
     /**
@@ -92,7 +106,7 @@ export default async function validate ({
       }))
 
       let i = 0
-      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(sortEntries)) {
+      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(getEntriesFileNameSort(fileStatsMap))) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords([{
             row: ++i,

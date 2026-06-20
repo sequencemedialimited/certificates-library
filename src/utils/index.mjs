@@ -30,13 +30,13 @@ import {
 } from './defaults.mjs'
 
 /**
- * @param {unknown} v
+ *  @param {unknown} v
  */
 export async function writeLine (v) {
   const s = String(v)
-  await (new Promise((resolve) => stdout.clearLine(0, () => resolve(v))))
-  await (new Promise((resolve) => stdout.cursorTo(0, () => resolve(v))))
-  await (new Promise((resolve) => stdout.write(s, () => resolve(v))))
+  await (new Promise((resolve) => stdout.clearLine(0, () => { resolve(v) })))
+  await (new Promise((resolve) => stdout.cursorTo(0, () => { resolve(v) })))
+  await (new Promise((resolve) => stdout.write(s, () => { resolve(v) })))
 }
 
 const {
@@ -44,12 +44,38 @@ const {
 } = process
 
 /**
- * @param {[string, unknown]} alpha
- * @param {[string, unknown]} omega
- * @returns {number}
- */
+ *  @param {[string, unknown]} alpha
+ *  @param {[string, unknown]} omega
+ *  @returns {number}
+ *//*
 export function sortEntries ([a], [o]) {
   return a.localeCompare(o)
+} */
+
+/**
+ *  @param {Map<string, Stats>} statsMap
+ *  @return {([alpha]: [string, unknown], [omega]: [string, unknown]) => number}
+ */
+export function getEntriesFileNameSort (statsMap = new Map()) {
+  /**
+   *  @param {[string, unknown]} alpha
+   *  @param {[string, unknown]} omega
+   */
+  return function entriesFileNameSort ([alpha], [omega]) {
+    const a = basename(alpha)
+    const o = basename(omega)
+
+    if (a === o) {
+      const { birthtimeMs: a } = statsMap.get(alpha) ?? STATS
+      const { birthtimeMs: o } = statsMap.get(omega) ?? STATS
+
+      // Numerical
+      return a - o
+    }
+
+    // Alphabetical
+    return a.localeCompare(o)
+  }
 }
 
 /**

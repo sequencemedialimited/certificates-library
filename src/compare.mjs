@@ -1,3 +1,7 @@
+/**
+ *  @typedef {import('node:fs').Stats} Stats
+ */
+
 import {
   basename,
   join
@@ -8,12 +12,16 @@ import { createWriteStream } from 'node:fs'
 import {
   readFile,
   glob,
+  stat,
   unlink
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
-import { sortEntries } from './utils/index.mjs'
+import {
+  getFileNameSort,
+  getEntriesFileNameSort
+} from './utils/index.mjs'
 
 const HEADER = [
   { id: 'row', title: 'Row' },
@@ -45,7 +53,16 @@ export default async function compare ({
    */
   const filePathsSet = new Set()
 
-  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) filePathsSet.add(filePath)
+  /**
+   *  @type {Map<string, Stats>}
+   */
+  const fileStatsMap = new Map()
+
+  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
+    filePathsSet.add(filePath)
+
+    fileStatsMap.set(filePath, await stat(filePath))
+  }
 
   if (filePathsSet.size) {
     /**
@@ -53,7 +70,7 @@ export default async function compare ({
      */
     const duplicatesMap = new Map()
 
-    const originalPaths = Array.from(filePathsSet)
+    const originalPaths = Array.from(filePathsSet).sort(getFileNameSort(fileStatsMap))
 
     for (const originalPath of originalPaths) {
       const b = basename(originalPath)
@@ -88,7 +105,7 @@ export default async function compare ({
       }))
 
       let i = 0
-      for await (const [original, duplicates] of Array.from(duplicatesMap.entries()).sort(sortEntries)) {
+      for await (const [original, duplicates] of Array.from(duplicatesMap.entries()).sort(getEntriesFileNameSort(fileStatsMap))) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords(Array.from(duplicates).map((duplicate) => {
             return {
