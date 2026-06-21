@@ -1,5 +1,3 @@
-import ExifReader from 'exifreader'
-
 import {
   join
 } from 'node:path'
@@ -8,14 +6,13 @@ import { createWriteStream } from 'node:fs'
 
 import {
   glob,
-  stat,
-  unlink,
-  readFile
+  unlink
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
 import {
+  getFileDate,
   toPsdPath,
   toJpgPath,
   accessFile,
@@ -55,34 +52,14 @@ export default async function validate ({
   const filePathsSet = new Set()
 
   /**
-   *  @type {Map<string, Date>}
+   *  @type {Map<string, Date | null>}
    */
   const fileDatesMap = new Map()
 
   for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
     filePathsSet.add(filePath)
 
-    const {
-      CreateDate: {
-        value: createDate = null
-      } = {}
-    } = ExifReader.load(
-      await readFile(filePath)
-    )
-
-    if (createDate) {
-      console.log('Exif')
-      fileDatesMap.set(filePath, new Date(createDate))
-    } else {
-      const {
-        birthtimeMs
-      } = await stat(filePath)
-
-      if (birthtimeMs) {
-        console.log('FS')
-        fileDatesMap.set(filePath, new Date(birthtimeMs))
-      }
-    }
+    fileDatesMap.set(filePath, await getFileDate(filePath))
   }
 
   if (filePathsSet.size) {

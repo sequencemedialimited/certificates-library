@@ -1,5 +1,3 @@
-import ExifReader from 'exifreader'
-
 import {
   basename,
   join
@@ -10,13 +8,13 @@ import { createWriteStream } from 'node:fs'
 import {
   readFile,
   glob,
-  stat,
   unlink
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
 import {
+  getFileDate,
   getFileNameSort,
   getEntriesFileNameSort
 } from './utils/index.mjs'
@@ -25,8 +23,8 @@ const HEADER = [
   { id: 'row', title: 'Row' },
   { id: 'original', title: 'Original' },
   { id: 'duplicate', title: 'Duplicate' },
-  { id: 'originalCreateDate', title: 'Original Create Date' },
-  { id: 'duplicateCreateDate', title: 'Duplicate Create Date' }
+  { id: 'originalDate', title: 'Original Date' },
+  { id: 'duplicateDate', title: 'Duplicate Date' }
 ]
 
 /**
@@ -54,34 +52,14 @@ export default async function compare ({
   const filePathsSet = new Set()
 
   /**
-   *  @type {Map<string, Date>}
+   *  @type {Map<string, Date | null>}
    */
   const fileDatesMap = new Map()
 
   for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
     filePathsSet.add(filePath)
 
-    const {
-      CreateDate: {
-        value: createDate = null
-      } = {}
-    } = ExifReader.load(
-      await readFile(filePath)
-    )
-
-    if (createDate) {
-      console.log('Exif')
-      fileDatesMap.set(filePath, new Date(createDate))
-    } else {
-      const {
-        birthtimeMs
-      } = await stat(filePath)
-
-      if (birthtimeMs) {
-        console.log('FS')
-        fileDatesMap.set(filePath, new Date(birthtimeMs))
-      }
-    }
+    fileDatesMap.set(filePath, await getFileDate(filePath))
   }
 
   if (filePathsSet.size) {
@@ -132,8 +110,8 @@ export default async function compare ({
               row: ++i,
               original,
               duplicate,
-              originalCreateDate: fileDatesMap.get(original)?.toISOString() ?? '',
-              duplicateCreateDate: fileDatesMap.get(duplicate)?.toISOString() ?? ''
+              originalDate: fileDatesMap.get(original)?.toISOString() ?? '',
+              duplicateDate: fileDatesMap.get(duplicate)?.toISOString() ?? ''
             }
           })), resolve)
         }))
