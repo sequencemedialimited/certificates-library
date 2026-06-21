@@ -52,7 +52,7 @@ try {
   } else {
     // it's a directory
     accessSync(to, constants.R_OK | constants.W_OK)
-    DESTINATION = join(to, 'compare.csv')
+    DESTINATION = join(to, 'validate.csv')
   }
 } catch {
   throw new Error(`Invalid \`to\` @ "${to}"`)

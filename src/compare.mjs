@@ -1,6 +1,4 @@
-/**
- *  @typedef {import('node:fs').Stats} Stats
- */
+import ExifReader from 'exifreader'
 
 import {
   basename,
@@ -26,7 +24,9 @@ import {
 const HEADER = [
   { id: 'row', title: 'Row' },
   { id: 'original', title: 'Original' },
-  { id: 'duplicate', title: 'Duplicate' }
+  { id: 'duplicate', title: 'Duplicate' },
+  { id: 'originalCreateDate', title: 'Original Create Date' },
+  { id: 'duplicateCreateDate', title: 'Duplicate Create Date' }
 ]
 
 /**
@@ -54,14 +54,34 @@ export default async function compare ({
   const filePathsSet = new Set()
 
   /**
-   *  @type {Map<string, Stats>}
+   *  @type {Map<string, Date>}
    */
-  const fileStatsMap = new Map()
+  const fileDatesMap = new Map()
 
   for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
     filePathsSet.add(filePath)
 
-    fileStatsMap.set(filePath, await stat(filePath))
+    const {
+      CreateDate: {
+        value: createDate = null
+      } = {}
+    } = ExifReader.load(
+      await readFile(filePath)
+    )
+
+    if (createDate) {
+      console.log('Exif')
+      fileDatesMap.set(filePath, new Date(createDate))
+    } else {
+      const {
+        birthtimeMs
+      } = await stat(filePath)
+
+      if (birthtimeMs) {
+        console.log('FS')
+        fileDatesMap.set(filePath, new Date(birthtimeMs))
+      }
+    }
   }
 
   if (filePathsSet.size) {
@@ -70,7 +90,7 @@ export default async function compare ({
      */
     const duplicatesMap = new Map()
 
-    const originalPaths = Array.from(filePathsSet).sort(getFileNameSort(fileStatsMap))
+    const originalPaths = Array.from(filePathsSet).sort(getFileNameSort(fileDatesMap))
 
     for (const originalPath of originalPaths) {
       const b = basename(originalPath)
@@ -105,13 +125,15 @@ export default async function compare ({
       }))
 
       let i = 0
-      for await (const [original, duplicates] of Array.from(duplicatesMap.entries()).sort(getEntriesFileNameSort(fileStatsMap))) {
+      for await (const [original, duplicates] of Array.from(duplicatesMap.entries()).sort(getEntriesFileNameSort(fileDatesMap))) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords(Array.from(duplicates).map((duplicate) => {
             return {
               row: ++i,
               original,
-              duplicate
+              duplicate,
+              originalCreateDate: fileDatesMap.get(original)?.toISOString() ?? '',
+              duplicateCreateDate: fileDatesMap.get(duplicate)?.toISOString() ?? ''
             }
           })), resolve)
         }))

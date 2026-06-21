@@ -1,6 +1,4 @@
-/**
- *  @typedef {import('node:fs').Stats} Stats
- */
+import ExifReader from 'exifreader'
 
 import {
   join,
@@ -13,6 +11,7 @@ import {
   glob,
   stat,
   mkdir,
+  readFile,
   copyFile,
   rm,
   cp
@@ -48,9 +47,9 @@ export default async function library (topDir, {
 
   if (filePathsSet.size) {
     /**
-     *  @type {Map<string, Stats>}
+     *  @type {Map<string, Date>}
      */
-    const fileStatsMap = new Map()
+    const fileDatesMap = new Map()
 
     for (const filePath of filePathsSet) {
       const psd = toPsdPath(filePath)
@@ -61,10 +60,30 @@ export default async function library (topDir, {
         accessFile(jpg)
       ])
 
-      fileStatsMap.set(filePath, await stat(filePath))
+      const {
+        CreateDate: {
+          value: createDate = null
+        } = {}
+      } = ExifReader.load(
+        await readFile(filePath)
+      )
+
+      if (createDate) {
+        console.log('Exif')
+        fileDatesMap.set(filePath, new Date(createDate))
+      } else {
+        const {
+          birthtimeMs
+        } = await stat(filePath)
+
+        if (birthtimeMs) {
+          console.log('FS')
+          fileDatesMap.set(filePath, new Date(birthtimeMs))
+        }
+      }
     }
 
-    const fileNameGroups = getFileNameGroups(filePathsSet, fileStatsMap, LIMIT)
+    const fileNameGroups = getFileNameGroups(filePathsSet, fileDatesMap, LIMIT)
 
     const TIF = join(topDir, 'TIF')
     const PSD = join(topDir, 'PSD')

@@ -1,7 +1,3 @@
-/**
- *  @typedef {import('node:fs').Stats} Stats
- */
-
 import process from 'node:process'
 
 import {
@@ -25,7 +21,6 @@ import {
 } from 'node:fs/promises'
 
 import {
-  STATS,
   LIMIT
 } from './defaults.mjs'
 
@@ -53,10 +48,10 @@ export function sortEntries ([a], [o]) {
 } */
 
 /**
- *  @param {Map<string, Stats>} statsMap
+ *  @param {Map<string, Date>} datesMap
  *  @return {([alpha]: [string, unknown], [omega]: [string, unknown]) => number}
  */
-export function getEntriesFileNameSort (statsMap = new Map()) {
+export function getEntriesFileNameSort (datesMap = new Map()) {
   /**
    *  @param {[string, unknown]} alpha
    *  @param {[string, unknown]} omega
@@ -66,8 +61,8 @@ export function getEntriesFileNameSort (statsMap = new Map()) {
     const o = basename(omega)
 
     if (a === o) {
-      const { birthtimeMs: a } = statsMap.get(alpha) ?? STATS
-      const { birthtimeMs: o } = statsMap.get(omega) ?? STATS
+      const a = datesMap.get(alpha)?.valueOf() ?? 0
+      const o = datesMap.get(omega)?.valueOf() ?? 0
 
       // Numerical
       return a - o
@@ -149,10 +144,10 @@ export function getLimit (limit = null) {
 }
 
 /**
- *  @param {Map<string, Stats>} statsMap
+ *  @param {Map<string, Date>} datesMap
  *  @return {(alpha: string, omega: string) => number}
  */
-export function getFileNameSort (statsMap = new Map()) {
+export function getFileNameSort (datesMap = new Map()) {
   /**
    *  @param {string} alpha
    *  @param {string} omega
@@ -162,8 +157,8 @@ export function getFileNameSort (statsMap = new Map()) {
     const o = basename(omega)
 
     if (a === o) {
-      const { birthtimeMs: a } = statsMap.get(alpha) ?? STATS
-      const { birthtimeMs: o } = statsMap.get(omega) ?? STATS
+      const a = datesMap.get(alpha)?.valueOf() ?? 0
+      const o = datesMap.get(omega)?.valueOf() ?? 0
 
       // Numerical
       return a - o
@@ -226,15 +221,15 @@ export function getFindFileNameGroup (fileName, limit = LIMIT) {
 
 /**
  *  @param {Set<string>} [pathsSet]
- *  @param {Map<string, Stats>} [statsMap]
+ *  @param {Map<string, Date>} [datesMap]
  *  @param {number} [limit]
  *  @return {string[][]}
  */
-export function getFileNameGroups (pathsSet = new Set(), statsMap = new Map(), limit = LIMIT) {
+export function getFileNameGroups (pathsSet = new Set(), datesMap = new Map(), limit = LIMIT) {
   return (
     Array
       .from(pathsSet)
-      .sort(getFileNameSort(statsMap))
+      .sort(getFileNameSort(datesMap))
       .reduce(getFileNameReduce(limit), [])
   )
 }

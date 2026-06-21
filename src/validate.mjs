@@ -1,6 +1,4 @@
-/**
- *  @typedef {import('node:fs').Stats} Stats
- */
+import ExifReader from 'exifreader'
 
 import {
   join
@@ -11,7 +9,8 @@ import { createWriteStream } from 'node:fs'
 import {
   glob,
   stat,
-  unlink
+  unlink,
+  readFile
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
@@ -27,7 +26,8 @@ const HEADER = [
   { id: 'row', title: 'Row' },
   { id: 'tif', title: 'TIF' },
   { id: 'psd', title: 'PSD' },
-  { id: 'jpg', title: 'JPG' }
+  { id: 'jpg', title: 'JPG' },
+  { id: 'createDate', title: 'Create Date' }
 ]
 
 /**
@@ -55,14 +55,34 @@ export default async function validate ({
   const filePathsSet = new Set()
 
   /**
-   *  @type {Map<string, Stats>}
+   *  @type {Map<string, Date>}
    */
-  const fileStatsMap = new Map()
+  const fileDatesMap = new Map()
 
   for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
     filePathsSet.add(filePath)
 
-    fileStatsMap.set(filePath, await stat(filePath))
+    const {
+      CreateDate: {
+        value: createDate = null
+      } = {}
+    } = ExifReader.load(
+      await readFile(filePath)
+    )
+
+    if (createDate) {
+      console.log('Exif')
+      fileDatesMap.set(filePath, new Date(createDate))
+    } else {
+      const {
+        birthtimeMs
+      } = await stat(filePath)
+
+      if (birthtimeMs) {
+        console.log('FS')
+        fileDatesMap.set(filePath, new Date(birthtimeMs))
+      }
+    }
   }
 
   if (filePathsSet.size) {
@@ -106,13 +126,14 @@ export default async function validate ({
       }))
 
       let i = 0
-      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(getEntriesFileNameSort(fileStatsMap))) {
+      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(getEntriesFileNameSort(fileDatesMap))) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords([{
             row: ++i,
             tif,
             psd: exceptions.get('psd') ?? '',
-            jpg: exceptions.get('jpg') ?? ''
+            jpg: exceptions.get('jpg') ?? '',
+            createDate: fileDatesMap.get(tif)?.toISOString ?? ''
           }]), resolve)
         }))
       }
