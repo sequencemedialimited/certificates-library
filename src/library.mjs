@@ -1,5 +1,3 @@
-import ExifReader from 'exifreader'
-
 import {
   join,
   basename
@@ -9,15 +7,14 @@ import { constants } from 'node:fs'
 
 import {
   glob,
-  stat,
   mkdir,
-  readFile,
   copyFile,
   rm,
   cp
 } from 'node:fs/promises'
 
 import {
+  getFileDate,
   toPsdPath,
   toJpgPath,
   getFileNameGroups,
@@ -41,49 +38,29 @@ export default async function library (topDir, {
   /**
    *  @type {Set<string>}
    */
-  const filePathsSet = new Set()
+  const filePathSet = new Set()
 
-  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) filePathsSet.add(filePath)
+  /**
+   *  @type {Map<string, Date | null>}
+   */
+  const fileDateMap = new Map()
 
-  if (filePathsSet.size) {
-    /**
-     *  @type {Map<string, Date>}
-     */
-    const fileDatesMap = new Map()
+  for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
+    filePathSet.add(filePath)
 
-    for (const filePath of filePathsSet) {
-      const psd = toPsdPath(filePath)
-      const jpg = toJpgPath(toPsdPath(filePath))
+    const [
+      fileDate
+    ] = await Promise.all([
+      getFileDate(filePath),
+      accessFile(toPsdPath(filePath)),
+      accessFile(toJpgPath(toPsdPath(filePath)))
+    ])
 
-      await Promise.all([
-        accessFile(psd),
-        accessFile(jpg)
-      ])
+    fileDateMap.set(filePath, fileDate)
+  }
 
-      const {
-        CreateDate: {
-          value: createDate = null
-        } = {}
-      } = ExifReader.load(
-        await readFile(filePath)
-      )
-
-      if (createDate) {
-        console.log('Exif')
-        fileDatesMap.set(filePath, new Date(createDate))
-      } else {
-        const {
-          birthtimeMs
-        } = await stat(filePath)
-
-        if (birthtimeMs) {
-          console.log('FS')
-          fileDatesMap.set(filePath, new Date(birthtimeMs))
-        }
-      }
-    }
-
-    const fileNameGroups = getFileNameGroups(filePathsSet, fileDatesMap, LIMIT)
+  if (filePathSet.size) {
+    const fileNameGroups = getFileNameGroups(filePathSet, fileDateMap, LIMIT)
 
     const TIF = join(topDir, 'TIF')
     const PSD = join(topDir, 'PSD')

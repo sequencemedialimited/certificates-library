@@ -1,3 +1,8 @@
+/**
+ *  @typedef {import('exifreader').ExifTags} ExifTags
+ */
+import ExifReader from 'exifreader'
+
 import process from 'node:process'
 
 import {
@@ -12,6 +17,7 @@ import {
 
 import {
   constants,
+  readFile,
   glob,
   mkdtemp,
   mkdir,
@@ -39,19 +45,53 @@ const {
 } = process
 
 /**
- *  @param {[string, unknown]} alpha
- *  @param {[string, unknown]} omega
- *  @returns {number}
- *//*
-export function sortEntries ([a], [o]) {
-  return a.localeCompare(o)
-} */
+ * @param {string} filePath
+ * @returns {Promise<Date | null>}
+ */
+export async function getFileDate (filePath) {
+  const exif = (
+    ExifReader
+      .load(
+        await readFile(filePath)
+      )
+  )
+
+  const {
+    CreateDate: {
+      value: createDate
+    } = {}
+  } = exif
+
+  if (createDate) {
+    return new Date(createDate)
+  } else {
+    const {
+      DateTime: { // @ts-ignore
+        value: [dateTime] = []
+      } = {}
+    } = exif
+
+    if (dateTime) {
+      return /^(\d{2}})\.(\d{2})\.(\d{4})/.test(dateTime) ? new Date(dateTime.replace(/^(\d{2}})\.(\d{2})\.(\d{4})/, '$3-$2-$1')) : new Date(dateTime)
+    } else {
+      const {
+        birthtimeMs
+      } = await stat(filePath)
+
+      if (birthtimeMs) {
+        return new Date(birthtimeMs)
+      }
+    }
+  }
+
+  return null
+}
 
 /**
- *  @param {Map<string, Date>} datesMap
+ *  @param {Map<string, Date | null>} dateMap
  *  @return {([alpha]: [string, unknown], [omega]: [string, unknown]) => number}
  */
-export function getEntriesFileNameSort (datesMap = new Map()) {
+export function getEntriesFileNameSort (dateMap = new Map()) {
   /**
    *  @param {[string, unknown]} alpha
    *  @param {[string, unknown]} omega
@@ -61,14 +101,19 @@ export function getEntriesFileNameSort (datesMap = new Map()) {
     const o = basename(omega)
 
     if (a === o) {
-      const a = datesMap.get(alpha)?.valueOf() ?? 0
-      const o = datesMap.get(omega)?.valueOf() ?? 0
+      const a = dateMap.get(alpha)?.valueOf() ?? 0
+      const o = dateMap.get(omega)?.valueOf() ?? 0
+
+      if (a === o) {
+        // Alphabetical - File Path
+        return alpha.localeCompare(omega)
+      }
 
       // Numerical
       return a - o
     }
 
-    // Alphabetical
+    // Alphabetical - File Name
     return a.localeCompare(o)
   }
 }
@@ -144,10 +189,10 @@ export function getLimit (limit = null) {
 }
 
 /**
- *  @param {Map<string, Date>} datesMap
+ *  @param {Map<string, Date | null>} dateMap
  *  @return {(alpha: string, omega: string) => number}
  */
-export function getFileNameSort (datesMap = new Map()) {
+export function getFileNameSort (dateMap = new Map()) {
   /**
    *  @param {string} alpha
    *  @param {string} omega
@@ -157,14 +202,19 @@ export function getFileNameSort (datesMap = new Map()) {
     const o = basename(omega)
 
     if (a === o) {
-      const a = datesMap.get(alpha)?.valueOf() ?? 0
-      const o = datesMap.get(omega)?.valueOf() ?? 0
+      const a = dateMap.get(alpha)?.valueOf() ?? 0
+      const o = dateMap.get(omega)?.valueOf() ?? 0
+
+      if (a === o) {
+        // Alphabetical - File Path
+        return alpha.localeCompare(omega)
+      }
 
       // Numerical
       return a - o
     }
 
-    // Alphabetical
+    // Alphabetical - File Name
     return a.localeCompare(o)
   }
 }
@@ -220,16 +270,16 @@ export function getFindFileNameGroup (fileName, limit = LIMIT) {
 }
 
 /**
- *  @param {Set<string>} [pathsSet]
- *  @param {Map<string, Date>} [datesMap]
+ *  @param {Set<string>} [pathSet]
+ *  @param {Map<string, Date | null>} [dateMap]
  *  @param {number} [limit]
  *  @return {string[][]}
  */
-export function getFileNameGroups (pathsSet = new Set(), datesMap = new Map(), limit = LIMIT) {
+export function getFileNameGroups (pathSet = new Set(), dateMap = new Map(), limit = LIMIT) {
   return (
     Array
-      .from(pathsSet)
-      .sort(getFileNameSort(datesMap))
+      .from(pathSet)
+      .sort(getFileNameSort(dateMap))
       .reduce(getFileNameReduce(limit), [])
   )
 }

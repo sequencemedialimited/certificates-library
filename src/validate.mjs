@@ -1,5 +1,3 @@
-import ExifReader from 'exifreader'
-
 import {
   join
 } from 'node:path'
@@ -8,14 +6,13 @@ import { createWriteStream } from 'node:fs'
 
 import {
   glob,
-  stat,
-  unlink,
-  readFile
+  unlink
 } from 'node:fs/promises'
 
 import { createObjectCsvStringifier } from 'csv-writer'
 
 import {
+  getFileDate,
   toPsdPath,
   toJpgPath,
   accessFile,
@@ -52,46 +49,26 @@ export default async function validate ({
   /**
    *  @type {Set<string>}
    */
-  const filePathsSet = new Set()
+  const filePathSet = new Set()
 
   /**
-   *  @type {Map<string, Date>}
+   *  @type {Map<string, Date | null>}
    */
-  const fileDatesMap = new Map()
+  const fileDateMap = new Map()
 
   for await (const filePath of glob(join(ORIGIN, '**/*.{tiff,tif}'))) {
-    filePathsSet.add(filePath)
+    filePathSet.add(filePath)
 
-    const {
-      CreateDate: {
-        value: createDate = null
-      } = {}
-    } = ExifReader.load(
-      await readFile(filePath)
-    )
-
-    if (createDate) {
-      console.log('Exif')
-      fileDatesMap.set(filePath, new Date(createDate))
-    } else {
-      const {
-        birthtimeMs
-      } = await stat(filePath)
-
-      if (birthtimeMs) {
-        console.log('FS')
-        fileDatesMap.set(filePath, new Date(birthtimeMs))
-      }
-    }
+    fileDateMap.set(filePath, await getFileDate(filePath))
   }
 
-  if (filePathsSet.size) {
+  if (filePathSet.size) {
     /**
      *  @type {Map<string, Map<'psd' | 'jpg', string>>}
      */
     const exceptionsMap = new Map()
 
-    for (const filePath of filePathsSet) {
+    for (const filePath of filePathSet) {
       const psd = toPsdPath(filePath)
       const jpg = toJpgPath(toPsdPath(filePath))
 
@@ -126,14 +103,14 @@ export default async function validate ({
       }))
 
       let i = 0
-      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(getEntriesFileNameSort(fileDatesMap))) {
+      for await (const [tif, exceptions] of Array.from(exceptionsMap.entries()).sort(getEntriesFileNameSort(fileDateMap))) {
         await (new Promise((resolve) => {
           writeStream.write(csvStringifier.stringifyRecords([{
             row: ++i,
             tif,
             psd: exceptions.get('psd') ?? '',
             jpg: exceptions.get('jpg') ?? '',
-            createDate: fileDatesMap.get(tif)?.toISOString ?? ''
+            createDate: fileDateMap.get(tif)?.toISOString() ?? ''
           }]), resolve)
         }))
       }
