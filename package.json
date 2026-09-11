@@ -33,7 +33,7 @@
   "devDependencies": {
     "@sequencemedia/eslint-config-standard": "^0.2.125",
     "@sequencemedia/eslint-config-typescript": "^0.1.216",
-    "@types/node": "^26.4.1",
+    "@types/node": "^26.5.0",
     "@types/yargs-parser": "^21.0.3",
     "eslint": "9.38.0",
     "globals": "^17.12.0",
