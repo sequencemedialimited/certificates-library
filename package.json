@@ -45,5 +45,8 @@
     "#certificates-library/utils": "./src/utils/index.mjs",
     "#certificates-library/utils/*": "./src/utils/*.mjs",
     "#types": "./types/index.d.mts"
+  },
+  "allowScripts": {
+    "exifreader@4.54.0": true
   }
 }
